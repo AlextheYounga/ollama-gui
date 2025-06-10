@@ -16,6 +16,7 @@ import { useChats } from './services/chat.ts'
 import TextInput from './components/Inputs/TextInput.vue'
 import Settings from './components/Settings.vue'
 
+
 const { refreshModels, availableModels } = useAI()
 const { activeChat, renameChat, switchModel, initialize } = useChats()
 const isEditingChatName = ref(false)

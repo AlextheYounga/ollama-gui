@@ -13,7 +13,7 @@ import { Message } from './database'
 const availableModels = ref<Model[]>([])
 
 export const useAI = () => {
-  const { generateChat, listLocalModels } = useApi()
+  const { generateChat, listModels } = useApi()
   const generate = async (
     model: string,
     messages: Message[],
@@ -36,7 +36,7 @@ export const useAI = () => {
   }
 
   const refreshModels = async () => {
-    const response = await listLocalModels()
+    const response = await listModels()
     availableModels.value = response.models
   }
 

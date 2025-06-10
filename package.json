@@ -17,6 +17,7 @@
     "autoprefixer": "^10.4.16",
     "date-fns": "^3.0.1",
     "dexie": "^3.2.4",
+    "fluent-ai": "/Users/alexyounger/Development/Code/OpenSource/fluent-ai",
     "gravatar-url": "^4.0.1",
     "highlight.js": "^11.9.0",
     "markdown-it": "^14.0.0",
