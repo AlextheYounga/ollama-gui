@@ -6,7 +6,7 @@ import { showSystem } from '../services/appConfig.ts'
 import { IconPlayerStopFilled, IconSend, IconWhirl } from '@tabler/icons-vue'
 
 const { textarea, input: userInput } = useTextareaAutosize({ input: '' })
-const { addSystemMessage, addUserMessage, abort, hasActiveChat, hasMessages, regenerateResponse } = useChats()
+const { addSystemMessage, addUserMessage, abort, hasMessages, regenerateResponse } = useChats()
 
 const isSystemMessage = ref(false)
 const isInputValid = computed<boolean>(() => !!userInput.value.trim())

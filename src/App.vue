@@ -12,14 +12,12 @@ import {
   isAllSettingsOpen,
 } from './services/appConfig.ts'
 import { nextTick, onMounted, ref } from 'vue'
-import { useAI } from './services/useAI.ts'
 import { useChats } from './services/chat.ts'
 import TextInput from './components/Inputs/TextInput.vue'
 import Settings from './components/Settings.vue'
 import AllSettings from './components/AllSettings.vue'
 
-const { refreshModels, availableModels } = useAI()
-const { activeChat, renameChat, switchModel, initialize } = useChats()
+const { availableModels, activeChat, renameChat, switchModel, initialize, refreshModels } = useChats()
 const isEditingChatName = ref(false)
 const editedChatName = ref('')
 const chatNameInput = ref()
