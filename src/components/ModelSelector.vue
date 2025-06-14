@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import { IconRefresh } from '@tabler/icons-vue'
 import { useChats } from '../services/chat.ts'
-import { useAI } from '../services/useAI.ts'
 import { ref } from 'vue'
 import { currentModel } from '../services/appConfig'
+import { Ollama } from 'ollama/dist/browser.mjs'
 
-const { activeChat, switchModel, hasMessages } = useChats()
-const { refreshModels, availableModels } = useAI()
-
+const { availableModels, activeChat, switchModel } = useChats()
 const refreshingModel = ref(false)
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const ollama = new Ollama()
 
 const performRefreshModel = async () => {
   refreshingModel.value = true
-  await Promise.all([refreshModels(), sleep(1000)])
-
-  refreshModels().then(() => {
-    refreshingModel.value = false
-  })
+  const models = await ollama.list()
+  availableModels.value = models.models
+  refreshingModel.value = false
 }
 
 const handleModelChange = (event: Event) => {

@@ -1,14 +1,16 @@
 import { computed, ref } from 'vue'
 import { Chat, db, Message } from './database'
 import { historyMessageLength, currentModel, useConfig } from './appConfig'
-import { useAI } from './useAI.ts'
-import { ChatCompletedResponse, ChatPartResponse, useApi } from './api.ts'
+import { Ollama, ModelResponse } from 'ollama/dist/browser.mjs'
+
+const ollama = new Ollama()
 
 interface ChatExport extends Chat {
   messages: Message[]
 }
 
 // State
+const availableModels = ref<ModelResponse[]>([])
 const chats = ref<Chat[]>([])
 const activeChat = ref<Chat | null>(null)
 const messages = ref<Message[]>([])
@@ -66,10 +68,12 @@ const dbLayer = {
   },
 }
 
-export function useChats() {
-  const { generate } = useAI()
-  const { abort } = useApi()
+export const refreshModels = async () => {
+	const models = await ollama.list()
+	availableModels.value = models.models
+}
 
+export function useChats() {
   // Computed
   const sortedChats = computed<Chat[]>(() =>
     [...chats.value].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
@@ -166,6 +170,18 @@ export function useChats() {
     systemPrompt.value = systemPromptMessage
   }
 
+  /*
+   * addUserMessage handles adding a user message and generating an AI response:
+   * 1. Creates and saves a new user message with the provided content
+   * 2. Creates an empty AI message to stream the response into
+   * 3. Calls generate() to stream the AI response, which:
+   *    - Appends new content to the AI message as it arrives
+   *    - Updates the message in the database
+   *    - Updates the UI if this is still the active chat
+   *    - Cleans up the ongoing message tracking when complete
+   * The function requires an active chat and handles the full lifecycle
+   * of the message exchange between user and AI.
+   */
   const addUserMessage = async (content: string) => {
     if (!activeChat.value) {
       console.warn('There was no active chat.')
@@ -184,14 +200,40 @@ export function useChats() {
       message.id = await dbLayer.addMessage(message)
       messages.value.push(message)
 
-      await generate(
-        currentModel.value,
-        messages.value,
-        systemPrompt.value,
-        historyMessageLength.value,
-        (data) => handleAiPartialResponse(data, currentChatId),
-        (data) => handleAiCompletion(data, currentChatId),
-      )
+      // Start a new AI message
+      const aiMessage: Message = {
+        chatId: currentChatId,
+        role: 'assistant',
+        content: '',
+        createdAt: new Date(),
+      }
+      aiMessage.id = await dbLayer.addMessage(aiMessage)
+      ongoingAiMessages.value.set(currentChatId, aiMessage)
+      messages.value.push(aiMessage)
+
+      let chatHistory = messages.value.slice(-(historyMessageLength.value ?? 0))
+      if (systemPrompt.value) {
+        chatHistory.unshift(systemPrompt.value)
+      }
+
+      const response = await ollama.chat({
+        model: currentModel.value,
+        messages: chatHistory,
+        stream: true
+      })
+
+      for await (const part of response) {
+        const aiMessage = ongoingAiMessages.value.get(currentChatId)
+        if (aiMessage) {
+          aiMessage.content += part.message.content
+          await dbLayer.updateMessage(aiMessage.id!, { content: aiMessage.content })
+          if (currentChatId === activeChat.value?.id) {
+            setMessages(await dbLayer.getMessages(currentChatId))
+          }
+        }
+      }
+
+      ongoingAiMessages.value.delete(currentChatId)
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -199,7 +241,6 @@ export function useChats() {
           return
         }
       }
-
       console.error('Failed to add user message:', error)
     }
   }
@@ -213,14 +254,40 @@ export function useChats() {
       messages.value.pop()
     }
     try {
-      await generate(
-        currentModel.value,
-        messages.value,
-        systemPrompt.value,
-        historyMessageLength.value,
-        (data) => handleAiPartialResponse(data, currentChatId),
-        (data) => handleAiCompletion(data, currentChatId),
-      )
+      // Start a new AI message
+      const aiMessage: Message = {
+        chatId: currentChatId,
+        role: 'assistant',
+        content: '',
+        createdAt: new Date(),
+      }
+      aiMessage.id = await dbLayer.addMessage(aiMessage)
+      ongoingAiMessages.value.set(currentChatId, aiMessage)
+      messages.value.push(aiMessage)
+
+      let chatHistory = messages.value.slice(-(historyMessageLength.value ?? 0))
+      if (systemPrompt.value) {
+        chatHistory.unshift(systemPrompt.value)
+      }
+
+      const response = await ollama.chat({
+        model: currentModel.value,
+        messages: chatHistory,
+        stream: true
+      })
+
+      for await (const part of response) {
+        const aiMessage = ongoingAiMessages.value.get(currentChatId)
+        if (aiMessage) {
+          aiMessage.content += part.message.content
+          await dbLayer.updateMessage(aiMessage.id!, { content: aiMessage.content })
+          if (currentChatId === activeChat.value?.id) {
+            setMessages(await dbLayer.getMessages(currentChatId))
+          }
+        }
+      }
+
+      ongoingAiMessages.value.delete(currentChatId)
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -229,26 +296,6 @@ export function useChats() {
         }
       }
       console.error('Failed to regenerate response:', error)
-    }
-  }
-
-  const handleAiPartialResponse = (data: ChatPartResponse, chatId: number) => {
-    ongoingAiMessages.value.has(chatId)
-      ? appendToAiMessage(data.message.content, chatId)
-      : startAiMessage(data.message.content, chatId)
-  }
-
-  const handleAiCompletion = async (data: ChatCompletedResponse, chatId: number) => {
-    const aiMessage = ongoingAiMessages.value.get(chatId)
-    if (aiMessage) {
-      try {
-        ongoingAiMessages.value.delete(chatId)
-      } catch (error) {
-        console.error('Failed to finalize AI message:', error)
-      }
-    } else {
-      console.error('no ongoing message to finalize:')
-      debugger
     }
   }
 
@@ -288,40 +335,9 @@ export function useChats() {
     }
   }
 
-  const startAiMessage = async (initialContent: string, chatId: number) => {
-    const message: Message = {
-      chatId: chatId,
-      role: 'assistant',
-      content: initialContent,
-      createdAt: new Date(),
-    }
-
-    try {
-      message.id = await dbLayer.addMessage(message)
-      ongoingAiMessages.value.set(chatId, message)
-      messages.value.push(message)
-    } catch (error) {
-      console.error('Failed to start AI message:', error)
-    }
-  }
-
-  const appendToAiMessage = async (content: string, chatId: number) => {
-    const aiMessage = ongoingAiMessages.value.get(chatId)
-    if (aiMessage) {
-      aiMessage.content += content
-      try {
-        await dbLayer.updateMessage(aiMessage.id!, { content: aiMessage.content })
-
-        // Only "load the messages" if we are on this chat atm.
-        if (chatId == activeChat.value?.id) {
-          setMessages(await dbLayer.getMessages(chatId))
-        }
-      } catch (error) {
-        console.error('Failed to append to AI message:', error)
-      }
-    } else {
-      console.log('No ongoing AI message?')
-    }
+  const abort = () => {
+    ongoingAiMessages.value.clear()
+	ollama.abort()
   }
 
   const exportChats = async () => {
@@ -357,6 +373,7 @@ export function useChats() {
   }
 
   return {
+	availableModels,
     chats,
     sortedChats,
     activeChat,
@@ -364,6 +381,7 @@ export function useChats() {
     hasMessages,
     hasActiveChat,
     renameChat,
+	refreshModels,
     switchModel,
     startNewChat,
     switchChat,
