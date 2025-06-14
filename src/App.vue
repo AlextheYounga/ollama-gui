@@ -9,12 +9,14 @@ import {
   isDarkMode,
   isSettingsOpen,
   isSystemPromptOpen,
+  isAllSettingsOpen,
 } from './services/appConfig.ts'
 import { nextTick, onMounted, ref } from 'vue'
 import { useAI } from './services/useAI.ts'
 import { useChats } from './services/chat.ts'
 import TextInput from './components/Inputs/TextInput.vue'
 import Settings from './components/Settings.vue'
+import AllSettings from './components/AllSettings.vue'
 
 const { refreshModels, availableModels } = useAI()
 const { activeChat, renameChat, switchModel, initialize } = useChats()
@@ -66,6 +68,13 @@ onMounted(() => {
           class="mx-auto flex h-screen w-full max-w-7xl flex-col gap-4 px-4 pb-4"
         >
           <SystemPrompt />
+        </div>
+
+		<div
+          v-if="isAllSettingsOpen"
+          class="mx-auto flex h-screen w-full max-w-7xl flex-col gap-4 px-4 pb-4"
+        >
+          <AllSettings />
         </div>
 
         <div
