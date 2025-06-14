@@ -13,12 +13,31 @@ import {
   toggleSettingsPanel,
 } from '../services/appConfig.ts'
 import { useChats } from '../services/chat.ts'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
+import ConfirmDialog from './Dialog/ConfirmDialog.vue'
 
-const { wipeDatabase } =
-  useChats()
+const { wipeDatabase } = useChats()
 
-const confirmWipe = () => {
-  if (confirm('Delete all chat history?')) {
+const {
+  isOpen,
+  message,
+  title,
+  confirmText,
+  cancelText,
+  confirm,
+  handleConfirm,
+  handleCancel,
+} = useConfirmDialog()
+
+const confirmWipe = async () => {
+  const confirmed = await confirm({
+    message: 'Delete all chat history?',
+    title: 'Confirm Deletion',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+  })
+  
+  if (confirmed) {
     wipeDatabase()
   }
 }
@@ -139,5 +158,14 @@ const confirmWipe = () => {
         </button>
       </div>
     </div>
+    <ConfirmDialog
+      v-model="isOpen"
+      :message="message"
+      :title="title"
+      :confirm-text="confirmText"
+      :cancel-text="cancelText"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </aside>
 </template>
