@@ -12,8 +12,7 @@ import {
 import {
   isDarkMode,
   isSystemPromptOpen,
-  toggleSettingsPanel,
-  toggleSystemPromptPanel,
+  togglePanel
 } from '../services/appConfig.ts'
 import { useChats } from '../services/chat.ts'
 
@@ -103,7 +102,7 @@ const lang = navigator.language
           User
         </button>
         <button
-          @click="toggleSystemPromptPanel"
+          @click="togglePanel('systemPrompt')"
           class="group flex w-full items-center gap-x-2 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors duration-100 ease-in-out hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-300 dark:hover:bg-gray-700 dark:focus:ring-blue-500"
         >
           <IconMessageCode class="size-4 opacity-50 group-hover:opacity-80" />
@@ -111,7 +110,7 @@ const lang = navigator.language
           System prompt
         </button>
         <button
-          @click="toggleSettingsPanel"
+          @click="togglePanel('settings')"
           class="group flex w-full items-center gap-x-2 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-900 transition-colors duration-100 ease-in-out hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-300 dark:hover:bg-gray-700 dark:focus:ring-blue-500"
         >
           <IconSettings2 class="size-4 opacity-50 group-hover:opacity-80" />

@@ -1,7 +1,11 @@
 import { useLocalStorage } from '@vueuse/core'
 import gravatarUrl from 'gravatar-url'
-import { computed } from 'vue'
+import { computed, ref, Ref } from 'vue'
 import { Config, db } from './database'
+
+export const isSettingsOpen = ref(true)
+export const isSystemPromptOpen = ref(false)
+export const isAllSettingsOpen = ref(false)
 
 export const currentModel = useLocalStorage('currentModel', 'none')
 export const gravatarEmail = useLocalStorage('gravatarEmail', '')
@@ -14,11 +18,23 @@ export const enableMarkdown = useLocalStorage('markdown', true)
 export const showSystem = useLocalStorage('systemMessages', true)
 export const baseUrl = useLocalStorage('baseUrl', 'http://localhost:11434/api')
 export const isDarkMode = useLocalStorage('darkMode', true)
-export const isSettingsOpen = useLocalStorage('settingsPanelOpen', true)
-export const isSystemPromptOpen = useLocalStorage('systemPromptOpen', false)
-export const toggleSettingsPanel = () => (isSettingsOpen.value = !isSettingsOpen.value)
-export const toggleSystemPromptPanel = () =>
-  (isSystemPromptOpen.value = !isSystemPromptOpen.value)
+
+
+export const togglePanel = (name: string) => {
+	switch (name) {
+		case 'systemPrompt':
+			isSystemPromptOpen.value = !isSystemPromptOpen.value
+			break
+		case 'settings':
+			isSettingsOpen.value = !isSettingsOpen.value
+			break
+		case 'allSettings':
+			isAllSettingsOpen.value = !isAllSettingsOpen.value
+			break
+		default:
+			break
+	}
+}
 
 // Database Layer
 export const configDbLayer = {

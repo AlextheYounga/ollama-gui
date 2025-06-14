@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { IconFileExport, IconUpload, IconLayoutSidebarRightCollapse, IconTrashX } from '@tabler/icons-vue'
 import ToggleInput from './Inputs/ToggleInput.vue'
-import TextInput from './Inputs/TextInput.vue'
 import ExportButton from './History/ExportButton.vue'
 import ImportButton from './History/ImportButton.vue'
 import {
-  baseUrl,
   historyMessageLength,
   enableMarkdown,
   showSystem,
-  gravatarEmail,
-  toggleSettingsPanel,
+  togglePanel,
 } from '../services/appConfig.ts'
 import { useChats } from '../services/chat.ts'
 
@@ -31,7 +28,7 @@ const confirmWipe = () => {
     >
       <div class="mb-4 flex items-center gap-x-2 px-2 text-gray-900 dark:text-gray-100">
         <button
-          @click="toggleSettingsPanel()"
+          @click="togglePanel('settings')"
           class="inline-flex rounded-lg p-1 hover:bg-gray-100 hover:dark:bg-gray-700"
         >
           <IconLayoutSidebarRightCollapse class="h-6 w-6" />
@@ -41,18 +38,23 @@ const confirmWipe = () => {
         <h2 class="text-lg font-medium">Settings</h2>
       </div>
 
-      <!-- More Settings -->
       <div
         class="mb-4 border-t border-gray-200 px-2 py-4 text-gray-900 dark:border-gray-700 dark:text-gray-100"
       >
+
+	  <button
+          type="button"
+          @click="togglePanel('allSettings')"
+          class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium border-white text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-offset-gray-90 mb-4"
+        >
+          <IconWritingSign class="h-5 w-5" />
+          All Settings
+        </button>
+		
         <div>
           <ToggleInput label="Enable Markdown" v-model="enableMarkdown" />
           <ToggleInput label="Show System messages" v-model="showSystem" />
         </div>
-
-        <TextInput id="base-url" label="Base URL" v-model="baseUrl" />
-
-        <TextInput id="gravatar-email" label="Gravatar Email" v-model="gravatarEmail" />
 
         <div>
           <label for="chat-history-length" class="mb-2 mt-4 block px-2 text-sm font-medium">
