@@ -3,12 +3,14 @@ import { currentModel, useConfig } from '../services/appConfig'
 import { useTextareaAutosize } from '@vueuse/core'
 import { onMounted, ref } from 'vue'
 import ModelSelector from './ModelSelector.vue'
+import { IconWritingSign } from '@tabler/icons-vue'
+import Toast from './Toast.vue'
 
 const { setConfig, initializeConfig } = useConfig()
 const { textarea } = useTextareaAutosize()
 const configInput = ref('')
 const defaultConfigInput = ref('')
-import { IconWritingSign } from '@tabler/icons-vue'
+const showToast = ref(false)
 
 onMounted(() => {
   initialize()
@@ -35,7 +37,7 @@ const onSubmit = () => {
       createdAt: new Date(),
     })
   }
-  alert('Saved !')
+  showToast.value = true
 }
 
 const shouldSubmit = ({ key, shiftKey }: KeyboardEvent): boolean => {
@@ -51,7 +53,14 @@ const onKeydown = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <aside class="flex flex-col gap-6 h-screen">
+  <aside class="flex flex-col gap-6">
+    
+	<Toast v-if="showToast" 
+	message="Saved!" 
+	status="success" 
+	:duration="2000" 
+	@update:isVisible="showToast = false" />
+	
     <div
       class="flex w-full flex-row items-center justify-center gap-4 rounded-b-xl bg-gray-100 px-4 py-2 dark:bg-gray-800"
     >
