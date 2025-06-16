@@ -11,10 +11,15 @@ const refreshingModel = ref(false)
 const ollama = new Ollama()
 
 const performRefreshModel = async () => {
-  refreshingModel.value = true
-  const models = await ollama.list()
-  availableModels.value = models.models
-  refreshingModel.value = false
+  try {
+    refreshingModel.value = true
+    const models = await ollama.list()
+    availableModels.value = models.models
+    refreshingModel.value = false
+  } catch (error) {
+    console.log('Failed to refresh models:', error)
+	refreshingModel.value = false
+  }
 }
 
 const handleModelChange = (event: Event) => {

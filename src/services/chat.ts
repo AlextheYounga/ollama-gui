@@ -69,8 +69,12 @@ const dbLayer = {
 }
 
 export const refreshModels = async () => {
-	const models = await ollama.list()
-	availableModels.value = models.models
+	try {
+		const models = await ollama.list()
+		availableModels.value = models.models
+	} catch (error) {
+		console.log('Failed to refresh models:', error)
+	}
 }
 
 export function useChats() {
