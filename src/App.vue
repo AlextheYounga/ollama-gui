@@ -11,16 +11,34 @@ import {
   isSystemPromptOpen,
 } from './services/appConfig.ts'
 import { nextTick, onMounted, ref } from 'vue'
-import { useAI } from './services/useAI.ts'
 import { useChats } from './services/chat.ts'
 import TextInput from './components/Inputs/TextInput.vue'
 import Settings from './components/Settings.vue'
+import { Ollama } from 'ollama/dist/browser.mjs'
 
-const { refreshModels, availableModels } = useAI()
-const { activeChat, renameChat, switchModel, initialize } = useChats()
+const ollama = new Ollama()
+
+async function checkOllama() {
+  try {
+    const models = await ollama.list()
+    return models.models.length > 0
+  } catch (error) {
+    return false
+  }
+}
+
+const {
+  availableModels,
+  activeChat,
+  renameChat,
+  switchModel,
+  initialize,
+  refreshModels,
+} = useChats()
 const isEditingChatName = ref(false)
 const editedChatName = ref('')
 const chatNameInput = ref()
+const ollamaAvailable = ref(true)
 
 const startEditing = () => {
   isEditingChatName.value = true
@@ -45,11 +63,13 @@ const confirmRename = () => {
   }
 }
 
-onMounted(() => {
-  refreshModels().then(async () => {
-    await initialize()
+onMounted(async () => {
+  await initialize()
+  ollamaAvailable.value = await checkOllama()
+  if (ollamaAvailable.value) {
+    await refreshModels()
     await switchModel(currentModel.value ?? availableModels.value[0].name)
-  })
+  }
 })
 </script>
 
@@ -111,5 +131,35 @@ onMounted(() => {
         <Settings v-if="isSettingsOpen" />
       </transition>
     </main>
+
+    <!-- Ollama Not Available Popup -->
+    <div
+      v-if="!ollamaAvailable"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+        <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+          Ollama Not Available
+        </h2>
+        <p class="mb-4 text-gray-600 dark:text-gray-300">
+          Please make sure Ollama is running on your system. You can start it by running:
+        </p>
+        <code
+          class="mb-4 block rounded bg-gray-100 p-2 font-mono text-sm dark:bg-gray-700 dark:text-gray-200"
+        >
+          ollama serve
+        </code>
+        <button
+          @click="
+            async () => {
+              ollamaAvailable = await checkOllama()
+            }
+          "
+          class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Retry Connection
+        </button>
+      </div>
+    </div>
   </div>
 </template>
