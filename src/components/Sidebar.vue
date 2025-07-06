@@ -57,15 +57,23 @@ const lang = navigator.language
         <button
           v-for="chat in sortedChats"
           @click="onSwitchChat(chat.id!)"
-          @keyup.delete="deleteChat(chat.id!)"
           :class="{
             'bg-gray-100 dark:bg-gray-800': activeChat?.id == chat.id,
           }"
-          class="flex w-full flex-col gap-y-1 rounded-md px-3 py-2 text-left transition-colors duration-100 ease-in-out hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 dark:placeholder-gray-300 dark:hover:bg-gray-700 dark:focus:ring-blue-500"
+          class="group flex w-full flex-col gap-y-1 rounded-md px-3 py-2 text-left transition-colors duration-100 ease-in-out hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 dark:placeholder-gray-300 dark:hover:bg-gray-700 dark:focus:ring-blue-500"
         >
-          <span class="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">
-            {{ chat.name }}
-          </span>
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">
+              {{ chat.name }}
+            </span>
+            <IconTrashX 
+              @click.stop="deleteChat(chat.id!)"
+              :class="[
+                'size-4 transition-opacity duration-200 hover:text-red-500 dark:text-gray-300',
+                activeChat?.id === chat.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              ]"
+            />
+          </div>
           <span class="text-xs leading-none text-gray-700 dark:text-gray-300">
             {{ chat.model }}
           </span>
